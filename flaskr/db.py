@@ -9,6 +9,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+import colorama
+from colorama import Fore, Style
+colorama.init()
 
 def get_db():
     if 'db' not in g:
@@ -19,14 +22,21 @@ def get_db():
                 host=os.environ['AWS_RDS_DB_HOST'],
                 port=os.environ['AWS_RDS_DB_PORT']
                 )
-            g.cursor = g.db.cursor()
+            print(Fore.LIGHTGREEN_EX)
+            print("\n🟢 PostgreSQL connection is open.\n")
+            print(Style.RESET_ALL)
         except (Exception, Error) as error:
             print("Error while connecting to PostgreSQL:", error)
-    return g.db, g.cursor
+    else:
+        print(Fore.YELLOW)
+        print("\n🟠 PostgreSQL connection is already open.\n")
+        print(Style.RESET_ALL)
+    return g.db
 
 
 def init_db():
-    db, cursor = get_db()
+    db = get_db()
+    cursor = db.cursor()
 
     with current_app.open_resource('schema.sql') as f:
         cursor.execute(f.read().decode('utf8'))
@@ -36,12 +46,12 @@ def init_db():
 
 def close_db(e=None):
     db = g.pop('db', None)
-    cursor = g.pop('cursor', None)
 
     if db is not None:
-        cursor.close()
         db.close()
-        print("PostgreSQL connection is closed")
+        print(Fore.LIGHTRED_EX)
+        print("\n🔴 PostgreSQL connection is closed.\n")
+        print(Style.RESET_ALL)
 
 
 @click.command('init-db')

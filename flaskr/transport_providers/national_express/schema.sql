@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS nx_journeys;
 DROP TABLE IF EXISTS nx_stations;
 
 CREATE TABLE nx_stations (
@@ -15,12 +14,3 @@ CREATE TABLE nx_stations (
   european BOOLEAN,
   euroline BOOLEAN
   );
-
-CREATE TABLE nx_journeys (
-  journey_id CHAR(1000) PRIMARY KEY,
-  departure_stop_id CHAR(10) REFERENCES nx_stations NOT NULL,
-  destination_stop_id CHAR(10) REFERENCES nx_stations NOT NULL,
-  fare INTEGER NOT NULL
-  -- departure_time  
-  -- arrival_time
-);
