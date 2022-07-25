@@ -176,10 +176,10 @@ def queue_requests_for_more_info(nx_stations):
 
     from rq import Retry
 
-    from transport_providers.national_express.get_stations import q
+    from transport_sdk.national_express.get_stations import q
     q.empty() # Removes any items in the Queue from before.
 
-    from transport_providers.national_express.get_stations.fetch_more_info import fetch_more_details
+    from transport_sdk.national_express.get_stations.fetch_more_info import fetch_more_details
 
     '''Would the program be faster if I used enqueue_many instead? Would there be any price implications of making multiple calls.'''
     # jobs = q.enqueue_many(

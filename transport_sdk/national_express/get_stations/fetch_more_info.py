@@ -1,8 +1,8 @@
 import requests
 import json
 
-from transport_providers.national_express.get_stations import q
-from transport_providers.national_express.get_stations.update_nx_stations import get_sqlite_db
+from transport_sdk.national_express.get_stations import q
+from transport_sdk.national_express.get_stations.update_nx_stations import get_sqlite_db
 
 from route_finder import create_app
 
@@ -68,7 +68,7 @@ def fetch_more_details(stop_id):
     
     if not len(q):
         print('\nQueue is empty!\n')
-        from transport_providers.national_express.get_stations.upload_to_postgres import add_to_postgresql
+        from transport_sdk.national_express.get_stations.upload_to_postgres import add_to_postgresql
         db.close()
         add_to_postgresql()
     else:

@@ -6,7 +6,7 @@ def add_to_postgresql():
     from route_finder.db import get_postgres_db, close_db
     from psycopg2.extras import execute_batch
 
-    from transport_providers.national_express.get_stations.update_nx_stations import get_sqlite_db
+    from transport_sdk.national_express.get_stations.update_nx_stations import get_sqlite_db
 
     with app.app_context():
 
@@ -52,7 +52,7 @@ def add_to_postgresql():
         from pathlib import Path
         current_directory = Path(__file__).parent.resolve()
 
-        from transport_providers.national_express.get_stations.update_nx_stations import db_name
+        from transport_sdk.national_express.get_stations.update_nx_stations import db_name
 
         file_path = db_name
         if os.path.isfile(f'{current_directory}/{file_path}'):
