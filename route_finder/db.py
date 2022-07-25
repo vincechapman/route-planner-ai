@@ -13,8 +13,48 @@ import colorama
 from colorama import Fore, Style
 colorama.init()
 
-def get_db():
+
+def close_db(e=None):
+    db = g.pop('db', None)
+
+    if db is not None:
+        db.close()
+
+
+class DatabaseConnection(object):
+
+    def __init__(self, connection, label=None):
+
+        if label is not None:
+            self.label = label
+        else:
+            self.label = connection
+
+        try:
+            g.db = connection
+            self.db = g.db
+            print(f"\n{Fore.LIGHTGREEN_EX}🟢 Database connection opened:{Style.RESET_ALL} {self.label}\n{'-' * 50}\n")
+        
+        except Exception as e:
+            print(f"\n{Fore.LIGHTRED_EX}🔴 Failed to create database connection:{Style.RESET_ALL} {self.label}\n{'-' * 50}\n")
+            print(e)
+
+    def __enter__(self):
+        return self.db
+
+    def __exit__(self, exc_type, exc_val, traceback):
+        if 'db' not in g:
+            print(f"\n{Fore.LIGHTMAGENTA_EX}🟣 All database connections closed already.{Style.RESET_ALL}\n")
+        else:
+            close_db()
+            print(f"\n{'-' * 50}\n{Fore.LIGHTMAGENTA_EX}🟣 Database connection closed{Style.RESET_ALL}\n")
+            
+
+
+def get_postgres_db():
+
     if 'db' not in g:
+
         try:
             g.db = psycopg2.connect(
                 user=os.environ['AWS_RDS_DB_USER'],
@@ -22,36 +62,24 @@ def get_db():
                 host=os.environ['AWS_RDS_DB_HOST'],
                 port=os.environ['AWS_RDS_DB_PORT']
                 )
-            print(Fore.LIGHTGREEN_EX)
-            print("\n🟢 PostgreSQL connection is open.\n")
-            print(Style.RESET_ALL)
+
         except (Exception, Error) as error:
-            print("Error while connecting to PostgreSQL:", error)
+            print(f"{Fore.LIGHTRED_EX}🔴 Error while connecting to PostgreSQL: {error}{Style.RESET_ALL}")
+
     else:
-        print(Fore.YELLOW)
-        print("\n🟠 PostgreSQL connection is already open.\n")
-        print(Style.RESET_ALL)
+        print(f'{Fore.YELLOW}🟠 {Style.RESET_ALL}')
+
     return g.db
 
 
 def init_db():
-    db = get_db()
+    db = get_postgres_db()
     cursor = db.cursor()
 
     with current_app.open_resource('schema.sql') as f:
         cursor.execute(f.read().decode('utf8'))
         db.commit()
         print("Tables created successfully in PostgreSQL")
-
-
-def close_db(e=None):
-    db = g.pop('db', None)
-
-    if db is not None:
-        db.close()
-        print(Fore.LIGHTRED_EX)
-        print("\n🔴 PostgreSQL connection is closed.\n")
-        print(Style.RESET_ALL)
 
 
 @click.command('init-db')
