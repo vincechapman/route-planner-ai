@@ -43,8 +43,3 @@ class Browser(object):
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         close_browser(self.browser)
-
-
-with Browser() as b:
-    print('do stuff')
-    print(b)
