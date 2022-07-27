@@ -20,7 +20,8 @@ CREATE TABLE nx_journeys (
   journey_id CHAR(1000) PRIMARY KEY,
   departure_stop_id CHAR(10) REFERENCES nx_stations NOT NULL,
   destination_stop_id CHAR(10) REFERENCES nx_stations NOT NULL,
-  fare INTEGER NOT NULL
+  fare INTEGER NOT NULL,
+  payload_hash TEXT NOT NULL UNIQUE
   -- departure_time  
   -- arrival_time
 );
