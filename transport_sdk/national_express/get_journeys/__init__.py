@@ -1,5 +1,14 @@
+import colorama
+from colorama import Fore, Style
+colorama.init()
+
 from proxy_rotator import bd_proxy_rotator, build_rotator
-from transport_sdk.national_express.get_journeys.helpers import generate_headers
+from transport_sdk.national_express.get_journeys.helpers import generate_headers, dict_hash
+
+from route_finder import create_app
+app = create_app()
+
+from route_finder.db import DatabaseConnection, get_postgres_db
 
 def multi_request(initial_payload, time_range=None, date_range=None, headers=generate_headers(), opener=build_rotator(deactivate_proxies=False)):
 
@@ -8,7 +17,7 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
     payload = initial_payload
 
     from transport_sdk.national_express.get_journeys.single_request import single_request
-
+    
 
     # ---------------------------------------------------------------------------------------
     # Initialising queue
@@ -18,7 +27,7 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
 
     q = Queue(name='nx_requests', connection=Redis())
 
-    q.empty() # Eventually remove this
+    # q.empty() # Eventually remove this
 
 
     # ---------------------------------------------------------------------------------------
@@ -46,39 +55,63 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
     # ---------------------------------------------------------------------------------------
     # Loop through given date and time ranges.
 
-    while start_date != end_date + timedelta(days=1):
+    with app.app_context():
 
-        selected_date = start_date.strftime('%d/%m/%Y')
-        print(f"\n{selected_date}")
+        with DatabaseConnection(get_postgres_db()) as db:
+
+            cursor = db.cursor()
+
+            while start_date != end_date + timedelta(days=1):
+
+                selected_date = start_date.strftime('%d/%m/%Y')
+                print(f"\n{selected_date}")
 
 
-        start_time_x = start_time # have to use two different variables as the time range iterates more than once and we need to be able to reset it using the original variable at the end of each loop.
+                start_time_x = start_time # have to use two different variables as the time range iterates more than once and we need to be able to reset it using the original variable at the end of each loop.
 
-        while start_time_x != end_time + timedelta(hours=1):
+                while start_time_x != end_time + timedelta(hours=1):
 
-            selected_time = start_time_x.strftime("%H:%M")
-            print(f'    {selected_time}')
+                    selected_time = start_time_x.strftime("%H:%M")
 
-            payload['leaveDateTime']['date'] = selected_date
-            payload['leaveDateTime']['time'] = selected_time
+                    payload['leaveDateTime']['date'] = selected_date
+                    payload['leaveDateTime']['time'] = selected_time
 
-            job = q.enqueue(
-                f=single_request,
-                payload=payload,
-                headers=headers,
-                opener=opener,
-                retry=Retry(max=3, interval=[5, 30, 60])
-            )
+                    payload_hash = dict_hash(payload)
 
-            print('Added to queue!')
+                    if not q.fetch_job(payload_hash):
 
-            start_time_x += timedelta(hours=1)
+                        cursor.execute('SELECT * FROM nx_journeys WHERE payload_hash = %s', (payload_hash,))
 
-        start_date += timedelta(days=1)
-    
-    print()
+                        if not cursor.fetchone():
 
-    print(f'{len(q)} items were added to the queue.')
+                            job = q.enqueue(
+                                f=single_request,
+                                payload=payload,
+                                headers=headers,
+                                opener=opener,
+                                retry=Retry(max=3, interval=[5, 30, 60]),
+                                job_id=payload_hash
+                            )
+
+                            print(f'{Fore.LIGHTMAGENTA_EX}✔️ {selected_time} | {payload_hash} added to the queue.{Style.RESET_ALL}')
+
+                        else:
+
+                            # UPDATE this to check recency of the data we have already, as the ticket prices change.
+
+                            print(f'{Fore.LIGHTRED_EX}❌ {selected_time} | {payload_hash} is already in the database.{Style.RESET_ALL}')
+
+                    else:
+
+                        print(f'{Fore.LIGHTRED_EX}❌ {selected_time} | {payload_hash} has already been added to the queue.{Style.RESET_ALL}')
+
+                    start_time_x += timedelta(hours=1)
+
+                start_date += timedelta(days=1)
+            
+            print()
+
+            print(f'{len(q)} items were added to the queue.')
 
 
 
