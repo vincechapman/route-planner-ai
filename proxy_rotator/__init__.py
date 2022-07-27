@@ -1,4 +1,4 @@
-def build_rotator(use_proxies=True):
+def build_rotator(deactivate_proxies=False):
 
     # ----------------------------------------------------------------------
     # Importing env vars for bright data
@@ -19,7 +19,7 @@ def build_rotator(use_proxies=True):
 
     from urllib.request import build_opener, ProxyHandler
 
-    if use_proxies:
+    if not deactivate_proxies:
         opener = build_opener(
             ProxyHandler(
                 {
