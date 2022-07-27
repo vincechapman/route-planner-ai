@@ -80,7 +80,7 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
 
                     if not q.fetch_job(payload_hash):
 
-                        cursor.execute('SELECT * FROM nx_journeys WHERE payload_hash = %s', (payload_hash,))
+                        cursor.execute('SELECT * FROM public.nx_journeys WHERE payload_hash = %s', (payload_hash,))
 
                         if not cursor.fetchone():
 
