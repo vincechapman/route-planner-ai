@@ -25,7 +25,7 @@ def init_browser():
         browser = None
         print(f"\n{Fore.LIGHTRED_EX}🔴 Failed to create initialise selenium webdriver.{Style.RESET_ALL}\n")
     else:
-        print(f"\n{Fore.LIGHTGREEN_EX}🟢 Selenium webdriver started:{Style.RESET_ALL}\n{'-' * 50}\n")
+        print(f"\n{Fore.LIGHTGREEN_EX}🟢 Selenium webdriver started.{Style.RESET_ALL}\n{'-' * 50}\n")
 
     return browser
 
