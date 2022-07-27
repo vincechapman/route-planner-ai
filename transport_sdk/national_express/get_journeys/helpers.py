@@ -112,3 +112,18 @@ def print_response(response):
 #     booking_fee = json.loads(response.text)["fee"]
 
 #     return booking_fee
+
+from typing import Dict, Any
+
+def dict_hash(dictionary: Dict[str, Any]) -> str:
+    
+    import hashlib
+    import json
+    
+    dhash = hashlib.md5()
+    
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    
+    dhash.update(encoded)
+    
+    return dhash.hexdigest()
