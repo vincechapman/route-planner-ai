@@ -16,7 +16,5 @@ build/
 *.egg-info/
 
 *cache.db
-transport_sdk/national_express/get_journeys/example_response.json
-transport_sdk/national_express/get_journeys/example_payload.json
 
 notebooks/
