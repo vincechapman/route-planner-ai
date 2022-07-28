@@ -48,7 +48,6 @@ def adding_stations_to_cache(nx_stations):
     cursor = db.cursor()
 
     data = [(stop_id, nx_stations[stop_id]['stop_name'], nx_stations[stop_id]['is_origin'], nx_stations[stop_id]['is_destination'], nx_stations[stop_id]['latitude'], nx_stations[stop_id]['longitude']) for stop_id in dict.keys(nx_stations)]
-    # print(data)
 
     try:
         cursor.executemany("""
@@ -70,6 +69,44 @@ def adding_stations_to_cache(nx_stations):
         db.close()
         print("\n🔴 SQLite connection is closed.\n")
 
+
+def add_stations_to_postgres(nx_stations):
+
+    from route_finder.db import DatabaseConnection, get_postgres_db
+    from psycopg2.extras import execute_batch
+
+    with app.app_context():
+        with DatabaseConnection(get_postgres_db()) as db:
+
+            cursor = db.cursor()
+
+            data = [(stop_id, nx_stations[stop_id]['stop_name'], nx_stations[stop_id]['is_origin'], nx_stations[stop_id]['is_destination'], nx_stations[stop_id]['latitude'], nx_stations[stop_id]['longitude']) for stop_id in dict.keys(nx_stations)]
+
+            try:
+
+                cursor.execute("""
+                    DELETE FROM public.nx_stations;""")
+                
+                print(f'public.nx_stations has been cleared.')
+
+                query = """
+                    INSERT INTO public.nx_stations (stop_id, stop_name, is_origin, is_destination, latitude, longitude)
+                        VALUES (%s, %s, %s::boolean, %s::boolean, %s, %s)"""
+
+                execute_batch(cursor, query, data)
+
+                db.commit()
+
+                print(f'public.nx_stations has been updated.')
+                
+            except Exception as e:
+
+                try:
+                    print(e.message, e.args)
+                
+                except:
+                    print(e)
+    
 
 def get_nx_stations():
 
@@ -112,6 +149,7 @@ def get_nx_stations():
         # This sets empty rows to None
         if not row['longitude'].strip():
             row['longitude'] = None
+
         if not row['latitude'].strip():
             row['latitude'] = None
 
@@ -122,8 +160,8 @@ def get_nx_stations():
                 'stop_name': row['text'],
                 'longitude': row['longitude'],
                 'latitude': row['latitude'],
-                'is_destination': False
-                }
+                'is_destination': False}
+            
             print(f'{Fore.GREEN}FROM ONLY station added!{Style.RESET_ALL}')
 
         # This applies to ALL rows in the response
@@ -144,6 +182,7 @@ def get_nx_stations():
             pass
 
     adding_stations_to_cache(nx_stations)
+    add_stations_to_postgres(nx_stations)
 
     return nx_stations
         
