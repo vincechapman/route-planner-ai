@@ -1,16 +1,22 @@
+# First fallback just calls the main function again
+
 import json
 
 from datetime import datetime
-
 from transport_sdk.national_express.get_journeys.helpers import generate_headers, dict_hash
 from proxy_rotator import build_rotator, bd_proxy_rotator
 
+def fallback_1(payload, payload_hash, headers=generate_headers(), add_to_database=True):
 
-def single_request(payload, headers=generate_headers(), opener=build_rotator(deactivate_proxies=False), add_to_database=True):
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
 
-    '''This function makes 1 request to the national express API for a specific date and time.'''
+    opener = build_rotator(
+        username=os.environ['BRIGHTDATA_DATACENTER_USERNAME'],
+        password=os.environ['BRIGHTDATA_DATACENTER_PASSWORD'],)
 
-    payload_hash = dict_hash(payload)
+    print('\nTrying again with data center proxies!')
 
     try:
 
@@ -49,28 +55,26 @@ def single_request(payload, headers=generate_headers(), opener=build_rotator(dea
 
         q = Queue('high', connection=Redis())
 
-        # Add all of these back to the queue and have them called in a random order. These fallbacks should apply specifically to INCAPSULA ERRORS
+        print('This is where fallback 2 would be called.')
 
-        # fallback_1 - Try datacentre proxy again
-
-        from transport_sdk.national_express.get_journeys.fallback_1 import fallback_1
+        from transport_sdk.national_express.get_journeys.fallback_2 import fallback_2
 
         job = q.enqueue(
-            f=fallback_1,
+            f=fallback_2,
             payload=payload,
             payload_hash=payload_hash,
             headers=headers,
             add_to_database=add_to_database,
-            retry=Retry(max=3, interval=[5, 30, 60]),
-            job_id=payload_hash + '_fb_1'
+            # retry=Retry(max=3, interval=[5, 30, 60]),
+            job_id=payload_hash + '_fb_2'
             )
 
-        print(f'Fallback 1 - Initiated for {job}\n')
+        print(f'\nFallback 2 - Initiated for {job}\n')
 
         job = Job.fetch(payload_hash, connection=Redis())
 
         response = job.result
-    
+
     else:
 
         if add_to_database:
@@ -83,20 +87,3 @@ def single_request(payload, headers=generate_headers(), opener=build_rotator(dea
 
         return response
 
-
-
-if __name__ == '__main__':
-
-    from transport_sdk.national_express.get_journeys.helpers import generate_payload
-
-    single_request(
-        payload=generate_payload(
-            journey_type='SINGLE',
-            outbound_date='07/08/2022',
-            outbound_time='17:00',
-            from_station_id='57000',
-            to_station_id='87025'),
-        headers=generate_headers(),
-        opener=build_rotator(deactivate_proxies=True),
-        add_to_database=True
-    )

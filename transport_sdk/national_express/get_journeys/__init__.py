@@ -25,7 +25,7 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
     from redis import Redis
     from rq import Queue, Retry
 
-    q = Queue('nx_get_journeys', connection=Redis())
+    q = Queue('high', connection=Redis())
 
     q.empty() # Eventually remove this
 
@@ -135,9 +135,9 @@ if __name__ == '__main__':
             outbound_date="01/08/2022",
             from_station_id="57000",
             to_station_id="87025"),
-        date_range=('1/9/2022', '9/9/2022'),
+        date_range=('10/9/2022', '20/9/2022'),
         time_range=('12:00', '21:00'),
-        opener=build_rotator(deactivate_proxies=False)
+        opener=build_rotator()
     )
 
 

@@ -127,3 +127,67 @@ def dict_hash(dictionary: Dict[str, Any]) -> str:
     dhash.update(encoded)
     
     return dhash.hexdigest()
+
+
+def add_to_postgres(response, payload_hash, request_time):
+
+    from datetime import datetime
+
+    from route_finder import create_app
+    app = create_app()
+
+    from route_finder.db import get_postgres_db, DatabaseConnection
+
+    with app.app_context():
+        with DatabaseConnection(get_postgres_db()) as db:
+
+            cursor = db.cursor()
+
+            for journey in response['journeyCommand']:
+
+                journey_id = journey['journeyId']
+
+                departure_stop_id = journey['legs'][0]['departureStopId']
+                destination_stop_id = journey['legs'][-1]['destinationStopId']
+                
+                departure_date = datetime.date(datetime.strptime(journey['departureDateTime'].split('T')[0], '%Y-%m-%d'))
+                arrival_date = datetime.date(datetime.strptime(journey['arrivalDateTime'].split('T')[0], '%Y-%m-%d'))
+
+                departure_time = datetime.time(datetime.strptime(journey['departureDateTime'].split('T')[1], '%H:%M:%S'))
+                arrival_time = datetime.time(datetime.strptime(journey['arrivalDateTime'].split('T')[1], '%H:%M:%S'))
+
+                price = float(str(journey['fare']['amountInPennies'])[:-2] + '.' + str(journey['fare']['amountInPennies'])[-2:])
+
+                extra_fees = None # Add booking fees and other here
+
+                cursor.execute('''
+                    INSERT INTO public.nx_journeys (journey_id, departure_stop_id, destination_stop_id, departure_date, departure_time, arrival_date, arrival_time, price, extra_fees, payload_hash, request_time)
+                        VALUES (%(journey_id)s, %(departure_stop_id)s, %(destination_stop_id)s, %(departure_date)s, %(departure_time)s, %(arrival_date)s, %(arrival_time)s, %(price)s, %(extra_fees)s, %(payload_hash)s, %(request_time)s)
+                        ON CONFLICT (journey_id) DO UPDATE SET
+                            price = %(price)s,
+                            departure_stop_id = %(departure_stop_id)s,
+                            destination_stop_id = %(destination_stop_id)s,
+                            departure_date = %(departure_date)s,
+                            departure_time = %(departure_time)s,
+                            arrival_date = %(arrival_date)s,
+                            arrival_time = %(arrival_time)s,
+                            extra_fees = %(extra_fees)s,
+                            request_time = %(request_time)s;
+                    ''', {
+                        'journey_id': journey_id,
+                        'departure_stop_id': departure_stop_id,
+                        'destination_stop_id': destination_stop_id,
+                        'departure_date': departure_date,
+                        'departure_time': departure_time,
+                        'arrival_date': arrival_date,
+                        'arrival_time': arrival_time,
+                        'price': price,
+                        'extra_fees': extra_fees,
+                        'payload_hash': payload_hash,
+                        'request_time': request_time,
+                        }
+                )
+
+            db.commit()
+
+            print(f'Added/updated {payload_hash} in database.')
