@@ -1,4 +1,4 @@
-def build_rotator(deactivate_proxies=False):
+def build_rotator(deactivate_proxies=False, username=None, password=None, location='-country-gb', port=22225):
 
     # ----------------------------------------------------------------------
     # Importing env vars for bright data
@@ -7,11 +7,8 @@ def build_rotator(deactivate_proxies=False):
     from dotenv import load_dotenv
     load_dotenv()
 
-    username = os.environ['BRIGHTDATA_DATACENTER_USERNAME']
-    password = os.environ['BRIGHTDATA_DATACENTER_PASSWORD']
-    location = '-country-gb'
-    port = 22225
-
+    username = username or os.environ['BRIGHTDATA_DATACENTER_USERNAME']
+    password = password or os.environ['BRIGHTDATA_DATACENTER_PASSWORD']
 
     # ----------------------------------------------------------------------
     # Building an opener that uses the proxies provided by bright data.
