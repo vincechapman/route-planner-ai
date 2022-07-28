@@ -31,6 +31,8 @@ def single_request(payload, headers=generate_headers(), opener=build_rotator(dea
             raise Exception("Request failed. Most likely blocked by incapsula. Or response JSON structure/naming has been updated.")
 
     except Exception as e:
+        
+        print('\nINCAPSULA ERROR!!!\n')
         print(e)
     
     else:
