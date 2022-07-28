@@ -25,7 +25,7 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
     from redis import Redis
     from rq import Queue, Retry
 
-    q = Queue('nx_requests', connection=Redis())
+    q = Queue('nx_get_journeys', connection=Redis())
 
     q.empty() # Eventually remove this
 
