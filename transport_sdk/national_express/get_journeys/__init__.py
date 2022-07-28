@@ -25,9 +25,9 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
     from redis import Redis
     from rq import Queue, Retry
 
-    q = Queue(name='nx_requests', connection=Redis())
+    q = Queue('nx_requests', connection=Redis())
 
-    # q.empty() # Eventually remove this
+    q.empty() # Eventually remove this
 
 
     # ---------------------------------------------------------------------------------------
@@ -61,6 +61,8 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
 
             cursor = db.cursor()
 
+            count = 0
+
             while start_date != end_date + timedelta(days=1):
 
                 selected_date = start_date.strftime('%d/%m/%Y')
@@ -88,12 +90,14 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
                                 f=single_request,
                                 payload=payload,
                                 headers=headers,
-                                opener=opener,
+                                # opener=opener,
                                 retry=Retry(max=3, interval=[5, 30, 60]),
                                 job_id=payload_hash
                             )
 
                             print(f'{Fore.LIGHTMAGENTA_EX}✔️ {selected_time} | {payload_hash} added to the queue.{Style.RESET_ALL}')
+                            
+                            count += 1
 
                         else:
 
@@ -111,7 +115,7 @@ def multi_request(initial_payload, time_range=None, date_range=None, headers=gen
             
             print()
 
-            print(f'{len(q)} items were added to the queue.')
+            print(f'{count} items were added to the queue.')
 
 
 
@@ -131,9 +135,9 @@ if __name__ == '__main__':
             outbound_date="01/08/2022",
             from_station_id="57000",
             to_station_id="87025"),
-        date_range=('5/8/2022', '6/8/2022'),
-        time_range=('17:00', '19:00'),
-        opener=build_rotator(deactivate_proxies=True)
+        date_range=('1/9/2022', '9/9/2022'),
+        time_range=('12:00', '21:00'),
+        opener=build_rotator(deactivate_proxies=False)
     )
 
 
